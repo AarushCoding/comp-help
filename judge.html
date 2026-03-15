@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WCA Help - Judge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 8px; shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        input, textarea, button { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { background: #2ecc71; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .issue-btn { background: #3498db; margin-bottom: 0; }
+        #submit { background: #e74c3c; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>WCA Incident Report</h2>
+    <input type="text" id="compId" placeholder="Competition ID (e.g. Falkirk2026)" required>
+    <input type="text" id="station" placeholder="Station Number" required>
+    
+    <p>Common Issues:</p>
+    <div class="grid">
+        <button class="issue-btn" onclick="setIssue('+2 / DNF Dispute')">+2/DNF</button>
+        <button class="issue-btn" onclick="setIssue('Puzzle Pop')">Pop</button>
+        <button class="issue-btn" onclick="setIssue('Timer Issue')">Timer</button>
+        <button class="issue-btn" onclick="setIssue('Extra Attempt?')">Extra?</button>
+    </div>
+
+    <textarea id="issue" placeholder="Details (Optional)"></textarea>
+    <button id="submit" onclick="sendRequest()">CALL DELEGATE</button>
+</div>
+
+<script type="module">
+    // Import the functions you need from the SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // PASTE YOUR FIREBASE CONFIG HERE
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        databaseURL: "YOUR_DATABASE_URL",
+        projectId: "YOUR_PROJECT_ID",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.setIssue = (text) => document.getElementById('issue').value = text;
+
+    window.sendRequest = () => {
+        const cID = document.getElementById('compId').value.trim();
+        const station = document.getElementById('station').value;
+        const issue = document.getElementById('issue').value;
+
+        if(!cID || !station) return alert("Please fill Comp ID and Station");
+
+        // This pushes to: requests/Falkirk2026/
+        const listRef = ref(db, 'requests/' + cID);
+        push(listRef, {
+            station: station,
+            issue: issue,
+            time: serverTimestamp(),
+            status: 'pending'
+        }).then(() => {
+            alert("Delegate Notified!");
+            document.getElementById('issue').value = "";
+        });
+    };
+</script>
+</body>
+</html>
