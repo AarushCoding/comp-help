@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Delegate View</title>
+    <style>
+        body { font-family: sans-serif; background: #2c3e50; color: white; padding: 20px; }
+        .incident { background: #ecf0f1; color: #333; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .station-badge { background: #e74c3c; color: white; padding: 10px; border-radius: 50%; font-weight: bold; min-width: 30px; text-align: center; }
+        .info { flex-grow: 1; margin-left: 15px; }
+        button { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>Delegate Dashboard</h1>
+    <input type="text" id="viewCompId" placeholder="Enter Comp ID to view" style="padding: 10px; width: 300px;">
+    <button onclick="startListening()">GO LIVE</button>
+
+    <div id="list" style="margin-top: 20px;"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    const firebaseConfig = { /* SAME AS ABOVE */ };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.startListening = () => {
+        const cID = document.getElementById('viewCompId').value.trim();
+        const listDiv = document.getElementById('list');
+        const dbRef = ref(db, 'requests/' + cID);
+
+        onValue(dbRef, (snapshot) => {
+            listDiv.innerHTML = "";
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                const id = childSnapshot.key;
+                
+                listDiv.innerHTML += `
+                    <div class="incident">
+                        <div class="station-badge">${data.station}</div>
+                        <div class="info">
+                            <strong>${data.issue}</strong>
+                        </div>
+                        <button onclick="resolve('${cID}', '${id}')">DONE</button>
+                    </div>
+                `;
+            });
+        });
+    };
+
+    window.resolve = (cID, reqId) => {
+        remove(ref(db, `requests/${cID}/${reqId}`));
+    };
+</script>
+</body>
+</html>
