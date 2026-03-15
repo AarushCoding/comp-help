@@ -1,58 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Delegate View</title>
-    <style>
-        body { font-family: sans-serif; background: #2c3e50; color: white; padding: 20px; }
-        .incident { background: #ecf0f1; color: #333; padding: 15px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .station-badge { background: #e74c3c; color: white; padding: 10px; border-radius: 50%; font-weight: bold; min-width: 30px; text-align: center; }
-        .info { flex-grow: 1; margin-left: 15px; }
-        button { background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delegate Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-900 text-white p-5">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">Active Incidents</h1>
+        
+        <div class="flex gap-2 mb-8">
+            <input type="text" id="viewCompId" placeholder="Comp ID (e.g. Falkirk2026)" class="flex-1 p-3 rounded text-black">
+            <button onclick="startListening()" class="bg-green-600 px-6 py-3 rounded font-bold">MONITOR</button>
+        </div>
 
-    <h1>Delegate Dashboard</h1>
-    <input type="text" id="viewCompId" placeholder="Enter Comp ID to view" style="padding: 10px; width: 300px;">
-    <button onclick="startListening()">GO LIVE</button>
+        <div id="list" class="space-y-4">
+            </div>
+    </div>
 
-    <div id="list" style="margin-top: 20px;"></div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        const firebaseConfig = {
+          apiKey: "AIzaSyBHi5A8vQ9ybvI2czdZxfu5PI17VILnizo",
+          authDomain: "comp-help.firebaseapp.com",
+          projectId: "comp-help",
+          storageBucket: "comp-help.firebasestorage.app",
+          messagingSenderId: "680195695602",
+          appId: "1:680195695602:web:4d85286336add69645816b"
+        };
 
-    const firebaseConfig = { /* SAME AS ABOVE */ };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    window.startListening = () => {
-        const cID = document.getElementById('viewCompId').value.trim();
-        const listDiv = document.getElementById('list');
-        const dbRef = ref(db, 'requests/' + cID);
+        window.startListening = () => {
+            const cID = document.getElementById('viewCompId').value.trim();
+            if(!cID) return;
+            
+            const dbRef = ref(db, 'requests/' + cID);
 
-        onValue(dbRef, (snapshot) => {
-            listDiv.innerHTML = "";
-            snapshot.forEach((childSnapshot) => {
-                const data = childSnapshot.val();
-                const id = childSnapshot.key;
+            onValue(dbRef, (snapshot) => {
+                const listDiv = document.getElementById('list');
+                listDiv.innerHTML = "";
                 
-                listDiv.innerHTML += `
-                    <div class="incident">
-                        <div class="station-badge">${data.station}</div>
-                        <div class="info">
-                            <strong>${data.issue}</strong>
+                snapshot.forEach((child) => {
+                    const data = child.val();
+                    const id = child.key;
+                    
+                    listDiv.innerHTML += `
+                        <div class="bg-gray-800 p-4 rounded-lg border-l-8 border-red-500 flex justify-between items-center shadow-lg">
+                            <div>
+                                <span class="text-3xl font-black text-red-400 mr-4">#${data.station}</span>
+                                <span class="text-xl">${data.issue || 'General Help'}</span>
+                            </div>
+                            <button onclick="resolve('${cID}', '${id}')" class="bg-green-600 p-3 rounded">DONE</button>
                         </div>
-                        <button onclick="resolve('${cID}', '${id}')">DONE</button>
-                    </div>
-                `;
+                    `;
+                });
             });
-        });
-    };
+        };
 
-    window.resolve = (cID, reqId) => {
-        remove(ref(db, `requests/${cID}/${reqId}`));
-    };
-</script>
+        window.resolve = (cID, id) => {
+            remove(ref(db, `requests/${cID}/${id}`));
+        };
+    </script>
 </body>
 </html>
